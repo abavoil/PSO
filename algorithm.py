@@ -18,44 +18,51 @@ def timeit(method):
     return timed
 
 
+def initialise_particles(nb_particles, low, high):
+    """
+    """
+
+
 @timeit
 def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_tol=1e-6, stable_iter=50, record_pos=False):
     """Minimize a function using Particle Swamp Optimization
 
     Parameters
     ----------
-    f: function to optimize
-       needs to be appliable to both individual particles (arrays of shape n)
-       and arrays of particles (arrays of shape nb_particles * n)
-       np.apply_along_axis can be used if no alternative is found
-    x0: array of initial positions
-    max_iter: number of iterations
-    phi1, phi2, w: coefficients in the PSO equation
+    f: function
+       function to optimize
+       maps an array of point to their corresponding evaluations
+       np.apply_along_axis can be used if no alternative is possible
+    x0: array
+        initial positions
+    max_iter: integer
+              number of iterations
+    phi1, phi2, w: integers or functions
+                   coefficients in the PSO equation
                    can either be numbers or functions of time
                    w defaults to lambda t: 1 - t if t > .6 else .4
-    project_onto_domain: vectorized function that maps an array of points from
-                         R^n onto their projections on the search domain
+    project_onto_domain: function
+                         maps an array of points from R^n to their projections in the search domain
                          None if domain is R^n to save time
-    stable_tol: tolerance to consider the barycenter stable from iteration to the following
-    stable_iter: after stable_iter iterations of stable barycenter, the algorithm stops
-    record_pos: if True, positions over iterations are kept and memory and
-                     in the second argument (high memory usage)
+    stable_tol: float
+                tolerance to consider the barycenter stable from iteration to the following
+    stable_iter: integer
+                 after stable_iter iterations of stable barycenter, the algorithm stops
+    record_pos: boolean
+                if True, positions over iterations are kept and memory and
+                in the second argument (high memory usage)
 
     Returns
     ----------
-    gb: the best position found
-    pos_hist: the positions of particles over time (None if record_pos is False)
+    gb: array
+        the best position found
+    pos_hist: array or None
+              the positions of particles over time (None if record_pos is False)
 
-    Example call
-    ----------
-    PSO(lambda x, y: x**2 + y**2,
-        np.array.uniform(-5, 5, (20, 2)),
-        100, 1000, 1, 1,
-        lambda t: 1 - .006*t if t < 1000 else .4)
 
     Notes
-    Passing the domain through a function allows any shape of domain (cuboid, sphere,...)
-    Points is the domain are left unchanged while points outside the domain are mapped to points inside.
+    ----------
+    Expressing the domain as a function allows for more flexibility in its shape (cuboid, sphere...)
     """
 
     # make all coefficients functions of time
