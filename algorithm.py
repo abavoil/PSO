@@ -71,7 +71,7 @@ def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_to
         w = lambda t: 1 - t if t > .6 else .4
     elif isinstance(phi1, numbers.Number):
         w_val = w
-        phi1 = lambda t: w_val
+        w = lambda t: w_val
 
     nparticles = x0.shape[0]
 
