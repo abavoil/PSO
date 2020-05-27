@@ -1,5 +1,8 @@
 import numpy as np
+import numbers
 import time
+
+# np.random.seed(1)
 
 
 def timeit(method):
@@ -7,7 +10,8 @@ def timeit(method):
         t0 = time.time()
         result = method(*args, **kw)
         tf = time.time()
-        print(f"{len(x0)} points, {max_iter} itérations: {(tf - t0) * 1000} ms")
+        if __name__ == '__main__':
+            print(f"{method.__name__} {len(args[1])} points, {args[2]} itérations: {(tf - t0) * 1000} ms")
 
         return result
 
@@ -15,21 +19,32 @@ def timeit(method):
 
 
 @timeit
-def PSO(f, x0, max_iter, phi1, phi2, w, project_onto_domain=None, stable_tol=1e-3, stable_iter=5):
+def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_tol=1e-6, stable_iter=50, record_pos=False):
     """Minimize a function using Particle Swamp Optimization
 
     Parameters
     ----------
     f: function to optimize
+       needs to be appliable to both individual particles (arrays of shape n)
+       and arrays of particles (arrays of shape nb_particles * n)
+       np.apply_along_axis can be used if no alternative is found
     x0: array of initial positions
     max_iter: number of iterations
-    phi1, phi2: coefficients in teh PSO equation
-    w: function of time with values between 0 (no inertia) and 1 (full inertia)
+    phi1, phi2, w: coefficients in the PSO equation
+                   can either be numbers or functions of time
+                   w defaults to lambda t: 1 - t if t > .6 else .4
     project_onto_domain: vectorized function that maps an array of points from
                          R^n onto their projections on the search domain
                          None if domain is R^n to save time
-    static_bary_th: tolerance to consider the barycenter stable from iteration to the following
+    stable_tol: tolerance to consider the barycenter stable from iteration to the following
+    stable_iter: after stable_iter iterations of stable barycenter, the algorithm stops
+    record_pos: if True, positions over iterations are kept and memory and
+                     in the second argument (high memory usage)
 
+    Returns
+    ----------
+    gb: the best position found
+    pos_hist: the positions of particles over time (None if record_pos is False)
 
     Example call
     ----------
@@ -38,140 +53,126 @@ def PSO(f, x0, max_iter, phi1, phi2, w, project_onto_domain=None, stable_tol=1e-
         100, 1000, 1, 1,
         lambda t: 1 - .006*t if t < 1000 else .4)
 
+    Notes
     Passing the domain through a function allows any shape of domain (cuboid, sphere,...)
     Points is the domain are left unchanged while points outside the domain are mapped to points inside.
     """
 
-    nparticles = x0.shape[0]
-    ndim = x0.shape[1]
+    # make all coefficients functions of time
+    if isinstance(phi1, numbers.Number):
+        phi1_val = phi1
+        phi1 = lambda t: phi1_val
 
-    # positions, velocitys and pb's and gb's are stored in these arrays
-    pos = np.empty((max_iter + 1, nparticles, ndim))
-    velocity = np.empty((max_iter + 1, nparticles, ndim))
-    pb_val = np.empty((max_iter + 1, nparticles))
-    pb_pos = np.empty((max_iter + 1, nparticles, ndim))
-    gb_val = np.empty((max_iter + 1,))
-    gb_pos = np.empty((max_iter + 1, ndim))
-    barycenter = np.empty((max_iter + 1, ndim))
-    pos[:], velocity[:], pb_val[:], pb_pos[:], gb_val[:], gb_pos[:], barycenter[:] = [np.NaN] * 7
+    if isinstance(phi2, numbers.Number):
+        phi2_val = phi2
+        phi2 = lambda t: phi2_val
+
+    if w is None:
+        w = lambda t: 1 - t if t > .6 else .4
+    elif isinstance(phi1, numbers.Number):
+        w_val = w
+        phi1 = lambda t: w_val
+
+    nparticles = x0.shape[0]
 
     # initialization
-    pos[0] = x0
-    velocity[0] = np.zeros(x0.shape)
-    pb_val[0] = np.apply_along_axis(f, 1, x0)
-    pb_pos[0] = x0
+    vel = np.zeros(x0.shape)
+    pos = x0
+    # pb_val = np.apply_along_axis(f, 1, x0)
+    pb_val = f(x0)
+    pb_pos = x0
 
-    gb_index = np.argmin(pb_val[0])
-    gb_val[0] = pb_val[0][gb_index]
-    gb_pos[0] = pb_pos[0][gb_index]
+    gb_index = np.argmin(pb_val)
+    gb_val = pb_val[gb_index]
+    gb_pos = pb_pos[gb_index]
 
-    barycenter[0] = np.sum(x0, 0) / nparticles
+    prev_barycenter = None
+    barycenter = np.sum(x0, 0) / nparticles
     stable_count = 0
 
+    # record positions ?
+    if record_pos:
+        pos_hist = np.empty((max_iter + 1, nparticles, x0.shape[1]))
+        pos_hist[:] = np.NaN
+        pos_hist[0] = pos
+    else:
+        pos_hist = None
+
+    # iterations of the algorithm
     for iter in range(max_iter):
-        # update velocity
-        velocity[iter + 1] = w(iter / max_iter) * velocity[iter] \
-            + phi1 * np.random.rand(nparticles, 1) * (pb_pos[iter] - pos[iter]) \
-            + phi2 * np.random.rand(nparticles, 1) * (gb_pos[iter] - pos[iter])
+        # # update velocity
+        vel = w(iter / max_iter) * vel \
+            + phi1(iter / max_iter) * np.random.rand(nparticles, 1) * (pb_pos - pos) \
+            + phi2(iter / max_iter) * np.random.rand(nparticles, 1) * (gb_pos - pos)
 
         # update position
-        pos[iter + 1] = pos[iter] + velocity[iter + 1]
+        pos = pos + vel
         if project_onto_domain is not None:
-            pos[iter] = project_onto_domain(pos[iter])
+            pos = project_onto_domain(pos)
+
+        # record positions ?
+        if record_pos:
+            pos_hist[iter + 1] = pos
 
         # evaluate f at each point of pos
-        val = np.apply_along_axis(f, 1, pos[iter + 1])
+        # val = np.apply_along_axis(f, 1, pos)
+        val = f(pos)
 
         # update pb's
         # new_pb[i] true if val[i] is a new pb for particle i
-        new_pb = val < pb_val[iter]
+        new_pb = val < pb_val
         # update only new pb's, and keep the rest
-        pb_val[iter + 1][new_pb] = val[new_pb]
-        pb_pos[iter + 1][new_pb] = pos[iter][new_pb]
-        pb_val[iter + 1][np.logical_not(new_pb)] = pb_val[iter][np.logical_not(new_pb)]
-        pb_pos[iter + 1][np.logical_not(new_pb)] = pb_pos[iter][np.logical_not(new_pb)]
+        pb_val[new_pb] = val[new_pb]
+        pb_pos[new_pb] = pos[new_pb]
 
         # update gb
-        min_pb_ind = np.argmin(pb_val[iter + 1])
-        min_pb_val = pb_val[iter + 1][min_pb_ind]
-        if np.any(new_pb) and min_pb_val < gb_val[iter]:
-            gb_val[iter + 1] = min_pb_val
-            gb_pos[iter + 1] = pos[iter + 1][min_pb_ind]
-        else:
-            gb_val[iter + 1] = gb_val[iter]
-            gb_pos[iter + 1] = gb_pos[iter]
+        min_pb_ind = np.argmin(pb_val)
+        min_pb_val = pb_val[min_pb_ind]
+        if np.any(new_pb) and min_pb_val < gb_val:
+            gb_val = min_pb_val
+            gb_pos = pos[min_pb_ind]
 
-        # update barycenter
-        barycenter[iter + 1] = np.sum(pos[iter + 1], 0) / nparticles
-        if np.linalg.norm(barycenter[iter + 1] - barycenter[iter]) < stable_tol:
+        # update barycenter, and potential early stop
+        barycenter = np.sum(pos, 0) / nparticles
+        if prev_barycenter is not None and np.linalg.norm(barycenter - prev_barycenter) < stable_tol:
             stable_count += 1
             if stable_count >= stable_iter:
                 break
         else:
             stable_count = 0
+        prev_barycenter = barycenter
 
-    final_iter = iter + 1
-    # if early break because of stable barycenter, don't return nan's
-    data_hist = {
-        "position": pos[:final_iter],
-        "velocity": velocity[:final_iter],
-        "personal best": pb_pos[:final_iter],
-        "global best": gb_pos[:final_iter],
-        "barycenter": barycenter[:final_iter]
-    }
+    if record_pos:
+        pos_hist = pos_hist[:iter + 1]
 
-    return gb_pos[final_iter], data_hist
+    return gb_pos, pos_hist
 
-
-"""
-2 points 3 dimensions 4 étapes
-
-gb :
-[0, 0, 0]
-
-position :
-[
-    [[1, 2, 0], [5, 2, 3]],
-    [[1, 5, 0], [5, 2, 1]],
-    [[1, 7, 0], [5, 2, -1]],
-    [[1, 9, 0], [5, 2, -3]],
-]
-
-velocity :
-[
-    [[0, 0, 0], [0, 0, 0]]
-    [[0, 3, 0], [0, 0, -2]],
-    [[0, 2, 0], [0, 0, -2]],
-    [[0, 2, 0], [0, 0, -2]],
-    [[0, 0, 0], [0, 0, 0]],
-]
-"""
 
 if __name__ == '__main__':
     import pickle
 
-    n = 1
+    n = 2
     M = 5.12
 
     def rastrigin(x):
-        return 10 * n + np.linalg.norm(x)**2 - 10 * np.sum(np.cos(2 * np.pi * x))
+        return 10 * n + np.sum(x * x - 10 * np.cos(2 * np.pi * x), axis=-1)
 
-    def norm(x):
-        return np.linalg.norm(x)
+    def booth(x):
+        return (x[0] + 2 * x[1] - 7)**2 + (2 * x[0] + x[1] - 5)**2
 
     def w(t):
-        return 1 - .06 * t if t < 10 else .4
+        # t in [0, 1]
+        return -t**2 + 1
 
     def project_onto_domain(x):
-        # np.clip(x, [x0min, x1min], [x0max, x1max]) would work too for n = 2
+        # np.clip(x, [x0min, x1min], [x0max, x1max]) would do the same for n = 2
         return np.clip(x, -M, M)
 
     f = rastrigin
-    x0 = np.random.uniform(-M, M, (20, n))
-    max_iter = 20
-    phi1, phi2 = .5, .1
-    # gb, data_hist = PSO(rastrigin, x0, max_iter, phi1, phi2, w, project_onto_domain)
-    gb, data_hist = PSO(rastrigin, x0, max_iter, phi1, phi2, w)
-    with open("data_hist.pickle", "wb") as pickle_out:
-        pickle.dump(data_hist, pickle_out)
-    print(len(data_hist["position"]), f(gb))
+    nb_particles = 10
+    x0 = np.random.uniform(-M, M, (nb_particles, n))
+    max_iter = 100
+    phi1, phi2 = .01, .05
+
+    gb, data = PSO(f, np.copy(x0), max_iter, phi1, phi2, w, project_onto_domain, record_pos=True)
+    print(data.shape)
