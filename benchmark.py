@@ -28,35 +28,6 @@ def project_onto_domain(x):
     return np.clip(x, -M, M)
 
 
-def test_phi1():
-    nb_phi1 = 20
-    tries_per_value = 50
-
-    nb_particles = 10
-    x0 = np.random.uniform(-M, M, (nb_particles, 2))
-    max_iter = 100
-    phi2 = .5
-    # value relative to phi2
-    Phi1 = phi2 * np.logspace(-2, 1, nb_phi1)
-
-    # PSO(rastrigin, x0.copy(), max_iter, phi1, phi2, w, project_onto_domain)
-
-    t0 = time.time()
-    solverate = np.array([np.mean([np.linalg.norm(PSO(rastrigin, x0.copy(), max_iter, phi1, phi2, w, project_onto_domain)) < 1e-3
-                                   for i in range(tries_per_value)])
-                          for phi1 in Phi1])
-    print(tries_per_value * nb_phi1, time.time() - t0)
-    print(f"{solverate=}")
-    # phi2 = .1
-    # mean_error = [0.5721208610882622, 0.35777208268564437, 0.4847634175635628, 0.4083726533555915, 0.5875673254412085, 0.5493573398762917, 0.7211545688734958, 0.5697007585600631, 0.470307557184262, 0.5453901278926019, 0.772572392051146, 0.5086087308315459, 0.6498122941274377, 0.8190197648607243, 0.5499401544225342, 0.8722568927213057, 0.6718204112268401, 0.7906751032411645, 1.739928826388622, 3.2071398156482025]
-
-    plt.plot(Phi1, solverate)
-    plt.xscale("log")
-    plt.suptitle("Erreur moyenne en fonction de phi1")
-    plt.title("err = |rastrigin(gb)| avec gb le résultat de PSO")
-    plt.show()
-
-
 def time_benchmark():
     phi1 = .02
     phi2 = .1
@@ -119,7 +90,7 @@ def phi1_constant_benchmark():
     dim = 2
     nb_iter = 100
     nb_part = 50
-    nb_runs = 10
+    nb_runs = 100
 
     with open("phi1_cst_benchmark.csv", "a") as output_file:
         output_file.write("phi1,correctness\n")
@@ -164,9 +135,59 @@ def size_nb_iter_benchmark():
             output_file.write("\n" + line)
 
 
+def validation():
+    np.random.seed(0)
+
+    def booth(x):
+        x_, y_ = np.moveaxis(x, -1, 0)
+        return (x_ + 2 * x_ - 7)**2 + (2 * x_ + y_ - 5)**2
+
+    def himmelblau(x):
+        x_, y_ = np.moveaxis(x, -1, 0)
+        return (x_ * x_ + y_ - 11)**2 + (x_ + y_**2 - 7)**2
+
+    def holder_table(x):
+        x_, y_ = np.moveaxis(x, -1, 0)
+        return -np.cos(x_) * np.cos(y_) * np.exp(-((x_ - np.pi)**2 + (y_ - np.pi)**2))
+
+    phi1 = .1
+    phi2 = .1
+    w = lambda t: 1 - t**4
+    dim = 2
+    nb_part = 30
+    nb_iter = 100
+    nb_runs = 1000
+
+    functions = [booth, himmelblau, holder_table]
+    boundary = [5, 10, 100]
+    pod = [lambda x: np.clip(x, -M, M) for M in boundary]
+
+    # min_positions = [np.array([[1, 3]]),
+    #                  np.array([[3, 2],
+    #                            [-2.805118, 3.131312],
+    #                            [-3.77931, -3.283186],
+    #                            [3.584428, -1.848126]]),
+    #                  np.array([np.pi, np.pi])]
+
+    min_values = [0, 0, -1]
+
+    with open("validation.csv", "a") as output_file:
+        output_file.write("function,correctness\n")
+        for i in range(len(functions)):
+            correct_count = 0
+            for run in range(nb_runs):
+                x0 = np.random.uniform(-boundary[i], boundary[i], (nb_part, 2))
+                best_found, _ = PSO(functions[i], x0, nb_iter, phi1, phi2, w, pod[i])
+                if np.abs(functions[i](best_found) - min_values[i]) < 1e-3:
+                    correct_count += 1
+            print(f"{functions[i].__name__},{correct_count/nb_runs}")
+            output_file.write(f"{functions[i].__name__},{correct_count/nb_runs}\n")
+
+
 if __name__ == '__main__':
-    # test_phi1()
     # time_benchmark()
     # time_benchmark_dimensions()
-    phi1_constant_benchmark()
+    # phi1_constant_benchmark()
     # size_nb_iter_benchmark()
+    validation()
+    pass

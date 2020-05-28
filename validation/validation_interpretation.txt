@@ -1,0 +1,16 @@
+phi1 = .1
+phi2 = .1
+w = lambda t: 1 - t**4
+dim = 2
+nb_part = 30
+nb_iter = 100
+
+Taux de réussite sur 1000 exécutions.
+
+On a volontairement choisi un nombre de particules et un nombre d'itérations
+faible pour ne pas avoir 100% de réussite et pouvoir analyser nos résultats.
+
+Ces résultats confirment que notre algorithme est fonctionnel pour une fonction
+quelconque.
+De plus, avec la fonction de Rastrigin, on avait 67% pour les mêmes paramètres. On avait
+donc une fonction très difficile pour notre algorithme.
