@@ -1,0 +1,26 @@
+On a fixé :
+- phi1 = .1
+- phi2 = .1
+- w : t --> 1 - t**4
+- en 2 dimensions
+- -5.12 < x, y < 5.12
+
+On fait la moyenne sur 100 résultats de l'algorithme
+
+
+Ces données confirment encore la validité de notre algorithme puisque
+l'on atteint de très bons taux de réussite avec des tailles d'essaim et de
+nombres maximums d'itérations.
+Pour bien analyser ces données, il faut se rappeler que la complexité de
+l'algorithme est O(log(nb_particules) * nb_iterations).
+On voit qu'augmenter le nombre de particules est plus rentable que d'augmenter
+le nombre maximal d'itérations, alors que la complexité de l'algorithme est en
+log(nb_part), mais avec 1000 particules dans un carré de 10.24 * 10.24, on a
+toutes les chances d'avoir une particule au minimum global dès l'initialisation.
+On voit aussi que le meilleur gain pour le nombre d'itération se fait entre 50
+et 100 pour 70 particules (valeur utilisé en pratique).
+Il faut donc trouver le bon équilibre entre nombre de particules et nombre
+maximum d'itération.
+/!\ A savoir que le nombre d'appels à la fonction est proportionel au nombre d'itération
+mais constant par rapport au nombre de particule, puisqu'on l'applique au tableau
+entier !!!
