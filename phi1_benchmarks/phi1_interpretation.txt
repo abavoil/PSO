@@ -1,4 +1,6 @@
 On a fixé :
+- optimisation de la fonction de Rastrigin
+- en 2 dimensions
 - 50 particules
 - 200 itérations
 - w: t --> 1-t^4
