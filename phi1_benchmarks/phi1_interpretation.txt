@@ -4,6 +4,9 @@ On a fixé :
 - w: t --> 1-t^4
 - phi2 = 0.1
 
+On suppose que l'algorithme réussi lorsque rastrigin(best_found) < 10^-3, avec gb la sortie de l'algorithme.
+
+
 # Pour phi1 constant
 
 phi1 a une importance cruciale dans l'algorithme, puisqu'il fait passer le taux de réussite de 11%
