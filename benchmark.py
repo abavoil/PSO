@@ -158,8 +158,8 @@ def validation():
     nb_iter = 100
     nb_runs = 1000
 
-    functions = [booth, himmelblau, holder_table]
-    boundary = [5, 10, 100]
+    functions = [rastrigin, booth, himmelblau, holder_table]
+    boundary = [5.12, 5, 10, 100]
     pod = [lambda x: np.clip(x, -M, M) for M in boundary]
 
     # min_positions = [np.array([[1, 3]]),
@@ -169,7 +169,7 @@ def validation():
     #                            [3.584428, -1.848126]]),
     #                  np.array([np.pi, np.pi])]
 
-    min_values = [0, 0, -1]
+    min_values = [0, 0, 0, -1]
 
     with open("validation.csv", "a") as output_file:
         output_file.write("function,correctness\n")

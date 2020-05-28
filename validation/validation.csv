@@ -1,4 +1,5 @@
 function,correctness
-booth,0.987
-himmelblau,0.974
-holder_table,0.952
+rastrigin,0.707
+booth,0.988
+himmelblau,0.965
+holder_table,0.95
