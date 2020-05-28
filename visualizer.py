@@ -34,7 +34,7 @@ def visualize2D(data, f=None):
         ax.contourf(X_bg, Y_bg, Z, 10, cmap=plt.cm.jet, zorder=0)
         ax.contour(X_bg, Y_bg, Z, 3, colors="b", zorder=1)
 
-    scat = ax.scatter(X[0], Y[0], c="r", s=10, marker="x", zorder=2)
+    scat = ax.scatter(X[0], Y[0], c="r", s=30, marker="x", zorder=2)
 
     def init():
         pass

@@ -12,5 +12,6 @@ faible pour ne pas avoir 100% de réussite et pouvoir analyser nos résultats.
 
 Ces résultats confirment que notre algorithme est fonctionnel pour une fonction
 quelconque.
+
 De plus, avec la fonction de Rastrigin, on avait 67% pour les mêmes paramètres. On avait
 donc une fonction très difficile pour notre algorithme.
