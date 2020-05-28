@@ -57,5 +57,35 @@ def test_phi1():
     plt.show()
 
 
+def time_benchmarking():
+    phi1 = .02
+    phi2 = .1
+    w = lambda t: 1 - t**4
+
+    dim_list = (2, 3, 5, 10)
+    nb_part_list = (10, 30, 50, 100, 1000)
+    nb_iter_list = (100, 200, 500, 1000)
+    nb_runs = 10
+
+    for dim in dim_list:
+        print(f"{dim=}")
+        with open(f"time_benchmark_{dim}D.csv", "a") as output_file:
+            output_file.write("nb_part\\nb_iter," + ",".join(map(str, nb_iter_list)))
+            for nb_part in nb_part_list:
+                print(f"    {nb_part=}")
+                line = f"{nb_part},"
+                times = []
+                x0 = np.random.uniform(-M, M, (nb_part, dim))
+                for nb_iter in nb_iter_list:
+                    print(f"        {nb_iter=}")
+                    t0 = time.monotonic_ns()
+                    for run in range(nb_runs):
+                        PSO(rastrigin, x0.copy(), nb_iter, phi1, phi2, w, project_onto_domain, stable_tol=0, stable_iter=nb_iter)
+                    times.append(round((time.monotonic_ns() - t0) / (1e6 * nb_runs), 1))
+                line += ", ".join(map(str, times))
+                output_file.write("\n" + line)
+
+
 if __name__ == '__main__':
-    test_phi1()
+    # test_phi1()
+    time_benchmarking()
