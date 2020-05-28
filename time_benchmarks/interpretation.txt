@@ -1,7 +1,17 @@
 Les résultats sont en millisecondes.
 
-Ils sont calculés en faisant la moyenne sur 10 exécutions de PSO pour les paramètres donnés 
+Ils sont calculés en faisant la moyenne sur 10 exécutions de PSO pour les paramètres donnés
 - dimension
 - nombre d'itérations
 - nombre de particules
 
+En regardant sur les résultats en 10D et pour 1000 itérations, on voit que l'algorithme est O(log(nb_particules)).
+En 10D et pour 1000 particules, on voit qu'il est O(nb_iterations)
+
+Un test séparé pour analyser la complexité sur les dimensions montre que pour les petites dimensions (<100), le temps
+est mieux que linéaire (O(log(dim)) ?), et qu'ensuite le temps devient O(dim)
+
+Donc notre fonction est O(log(nb_particules) * nb_iterations * dim).
+
+Nos benchmarks sur les dimensions montrent qu'il est inefficace pour les problèmes à beaucoup de dimensions, qui demanderaient
+en plus bien plus que 100 particules.

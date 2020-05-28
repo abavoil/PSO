@@ -57,7 +57,7 @@ def test_phi1():
     plt.show()
 
 
-def time_benchmarking():
+def time_benchmark():
     phi1 = .02
     phi2 = .1
     w = lambda t: 1 - t**4
@@ -73,7 +73,6 @@ def time_benchmarking():
             output_file.write("nb_part\\nb_iter," + ",".join(map(str, nb_iter_list)))
             for nb_part in nb_part_list:
                 print(f"    {nb_part=}")
-                line = f"{nb_part},"
                 times = []
                 x0 = np.random.uniform(-M, M, (nb_part, dim))
                 for nb_iter in nb_iter_list:
@@ -82,10 +81,40 @@ def time_benchmarking():
                     for run in range(nb_runs):
                         PSO(rastrigin, x0.copy(), nb_iter, phi1, phi2, w, project_onto_domain, stable_tol=0, stable_iter=nb_iter)
                     times.append(round((time.monotonic_ns() - t0) / (1e6 * nb_runs), 1))
-                line += ", ".join(map(str, times))
+                line = f"{nb_part}," + ", ".join(map(str, times))
                 output_file.write("\n" + line)
+
+
+def time_benchmark_dimensions():
+    phi1 = .02
+    phi2 = .1
+    w = lambda t: 1 - t**4
+
+    dim_list = (10, 30, 100, 300, 1000, 3000, 10000)
+    nb_iter = 100
+    nb_part = 100
+    nb_runs = 1
+    times = []
+    for dim in dim_list:
+        x0 = np.random.uniform(-M, M, (nb_part, dim))
+        t0 = time.monotonic_ns()
+        for run in range(nb_runs):
+            PSO(rastrigin, x0.copy(), nb_iter, phi1, phi2, w, project_onto_domain, stable_tol=0, stable_iter=nb_iter)
+        t = round((time.monotonic_ns() - t0) / (1e6 * nb_runs), 1)
+        times.append(t)
+        print(f"{dim=}, {t=}")
+
+
+    with open("time_benchmark_for_dimensions.csv", "a") as output_file:
+        output_file.write("nb_part,nb_iter\\dim," + ",".join(map(str, dim_list)))
+        output_file.write(f"\n{nb_part},{nb_iter}," + ",".join(map(str, times)))
+
+
+
+
 
 
 if __name__ == '__main__':
     # test_phi1()
-    time_benchmarking()
+    # time_benchmark()
+    time_benchmark_dimensions()
