@@ -117,23 +117,51 @@ def phi1_constant_benchmark():
 
     phi1_list = (0, .01, .05, .08, .09, .095, .1, .105, .11, .12, .15, .2, .3, .5, .8, 1, 2, 4)
     dim = 2
-    nb_iter = 50
-    nb_part = 200
-    nb_runs = 100
-
-    correct_counts = dict((phi1, 0) for phi1 in phi1_list)
-    for phi1 in phi1_list:
-        for run in range(nb_runs):
-            x0 = np.random.uniform(-M, M, (nb_part, dim))
-            best_found = PSO(rastrigin, x0, nb_iter, phi1, phi2, w, project_onto_domain)[0]
-            if rastrigin(best_found) < 1e-3:
-                correct_counts[phi1] += 1
-        print(f"{phi1=}, correct={correct_counts[phi1]/nb_runs}")
+    nb_iter = 100
+    nb_part = 50
+    nb_runs = 10
 
     with open("phi1_cst_benchmark.csv", "a") as output_file:
         output_file.write("phi1,correctness\n")
         for phi1 in phi1_list:
-            output_file.write(f"{phi1},{correct_counts[phi1]/nb_runs}\n")
+            correct_counts = 0
+            for run in range(nb_runs):
+                x0 = np.random.uniform(-M, M, (nb_part, dim))
+                best_found = PSO(rastrigin, x0, nb_iter, phi1, phi2, w, project_onto_domain)[0]
+                if rastrigin(best_found) < 1e-3:
+                    correct_counts += 1
+            print(f"{phi1=}, correct={correct_counts/nb_runs}")
+            output_file.write(f"{phi1},{correct_counts/nb_runs}\n")
+
+
+def size_nb_iter_benchmark():
+    np.random.seed(0)
+
+    phi1 = .1
+    phi2 = .1
+    w = lambda t: 1 - t**4
+
+    nb_part_list = (10, 20, 30, 50, 70, 100, 300, 1000)
+    nb_iter_list = (50, 100, 300, 1000, 3000)
+    dim = 2
+    nb_runs = 100
+
+    with open(f"swarm_size_nb_iterations_benchmark.csv", "a") as output_file:
+        output_file.write("nb_part\\nb_iter," + ",".join(map(str, nb_iter_list)))
+        for nb_part in nb_part_list:
+            print(f"{nb_part=}")
+            success_rates = []
+            for nb_iter in nb_iter_list:
+                print(f"    {nb_iter=}")
+                success_count = 0
+                for run in range(nb_runs):
+                    x0 = np.random.uniform(-M, M, (nb_part, dim))
+                    best_found = PSO(rastrigin, x0, nb_iter, phi1, phi2, w, project_onto_domain)[0]
+                    if rastrigin(best_found) < 1e-3:
+                        success_count += 1
+                success_rates.append(success_count / nb_runs)
+            line = f"{nb_part}," + ", ".join(map(str, success_rates))
+            output_file.write("\n" + line)
 
 
 if __name__ == '__main__':
@@ -141,3 +169,4 @@ if __name__ == '__main__':
     # time_benchmark()
     # time_benchmark_dimensions()
     phi1_constant_benchmark()
+    # size_nb_iter_benchmark()
