@@ -93,7 +93,7 @@ def time_benchmark_dimensions():
     dim_list = (10, 30, 100, 300, 1000, 3000, 10000)
     nb_iter = 100
     nb_part = 100
-    nb_runs = 1
+    nb_runs = 10
     times = []
     for dim in dim_list:
         x0 = np.random.uniform(-M, M, (nb_part, dim))
@@ -104,17 +104,40 @@ def time_benchmark_dimensions():
         times.append(t)
         print(f"{dim=}, {t=}")
 
-
     with open("time_benchmark_for_dimensions.csv", "a") as output_file:
         output_file.write("nb_part,nb_iter\\dim," + ",".join(map(str, dim_list)))
         output_file.write(f"\n{nb_part},{nb_iter}," + ",".join(map(str, times)))
 
 
+def phi1_constant_benchmark():
+    np.random.seed(0)
 
+    phi2 = .1
+    w = lambda t: 1 - t**4
 
+    phi1_list = (0, .01, .05, .08, .09, .095, .1, .105, .11, .12, .15, .2, .3, .5, .8, 1, 2, 4)
+    dim = 2
+    nb_iter = 50
+    nb_part = 200
+    nb_runs = 100
+
+    correct_counts = dict((phi1, 0) for phi1 in phi1_list)
+    for phi1 in phi1_list:
+        for run in range(nb_runs):
+            x0 = np.random.uniform(-M, M, (nb_part, dim))
+            best_found = PSO(rastrigin, x0, nb_iter, phi1, phi2, w, project_onto_domain)[0]
+            if rastrigin(best_found) < 1e-3:
+                correct_counts[phi1] += 1
+        print(f"{phi1=}, correct={correct_counts[phi1]/nb_runs}")
+
+    with open("phi1_cst_benchmark.csv", "a") as output_file:
+        output_file.write("phi1,correctness\n")
+        for phi1 in phi1_list:
+            output_file.write(f"{phi1},{correct_counts[phi1]/nb_runs}\n")
 
 
 if __name__ == '__main__':
     # test_phi1()
     # time_benchmark()
-    time_benchmark_dimensions()
+    # time_benchmark_dimensions()
+    phi1_constant_benchmark()
