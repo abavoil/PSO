@@ -18,14 +18,10 @@ def timeit(method):
     return timed
 
 
-def initialise_particles(nb_particles, low, high):
-    """
-    """
-
-
-@timeit
+# @timeit
 def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_tol=1e-6, stable_iter=50, record_pos=False):
     """Minimize a function using Particle Swamp Optimization
+    Complexity: O(nb_particle*nb_iter)
 
     Parameters
     ----------
@@ -56,8 +52,10 @@ def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_to
     ----------
     gb: array
         the best position found
-    pos_hist: array or None
-              the positions of particles over time (None if record_pos is False)
+    pos_hist: array or None if record_pos is False
+              the positions of particles over time
+              to access the coordinate of dimension d of particle p at step s
+              pos_hist[s][p][d]
 
 
     Notes
@@ -75,6 +73,7 @@ def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_to
         phi2 = lambda t: phi2_val
 
     if w is None:
+        # default w
         w = lambda t: 1 - t if t > .6 else .4
     elif isinstance(w, numbers.Number):
         w_val = w
@@ -85,7 +84,6 @@ def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_to
     # initialization
     vel = np.zeros(x0.shape)
     pos = x0
-    # pb_val = np.apply_along_axis(f, 1, x0)
     pb_val = f(x0)
     pb_pos = x0
 
@@ -107,7 +105,7 @@ def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_to
 
     # iterations of the algorithm
     for iter in range(max_iter):
-        # # update velocity
+        # update velocity
         vel = w(iter / max_iter) * vel \
             + phi1(iter / max_iter) * np.random.rand(nparticles, 1) * (pb_pos - pos) \
             + phi2(iter / max_iter) * np.random.rand(nparticles, 1) * (gb_pos - pos)
@@ -122,11 +120,9 @@ def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_to
             pos_hist[iter + 1] = pos
 
         # evaluate f at each point of pos
-        # val = np.apply_along_axis(f, 1, pos)
         val = f(pos)
 
         # update pb's
-        # new_pb[i] true if val[i] is a new pb for particle i
         new_pb = val < pb_val
         # update only new pb's, and keep the rest
         pb_val[new_pb] = val[new_pb]
@@ -158,28 +154,33 @@ def PSO(f, x0, max_iter, phi1, phi2, w=None, project_onto_domain=None, stable_to
 if __name__ == '__main__':
     import pickle
 
-    n = 2
-    M = 5.12
+    if True:
+        n = 2
+        M = 5.12
 
-    def rastrigin(x):
-        return 10 * n + np.sum(x * x - 10 * np.cos(2 * np.pi * x), axis=-1)
+        def rastrigin(x):
+            return 10 * n + np.sum(x * x - 10 * np.cos(2 * np.pi * x), axis=-1)
 
-    def booth(x):
-        return (x[0] + 2 * x[1] - 7)**2 + (2 * x[0] + x[1] - 5)**2
+        def booth(x):
+            return (x[0] + 2 * x[1] - 7)**2 + (2 * x[0] + x[1] - 5)**2
 
-    def w(t):
-        # t in [0, 1]
-        return -t**2 + 1
+        def w(t):
+            # t in [0, 1]
+            return -t**2 + 1
 
-    def project_onto_domain(x):
-        # np.clip(x, [x0min, x1min], [x0max, x1max]) would do the same for n = 2
-        return np.clip(x, -M, M)
+        def project_onto_domain(x):
+            # np.clip(x, [x0min, x1min], [x0max, x1max]) would do the same for n = 2
+            return np.clip(x, -M, M)
 
-    f = rastrigin
-    nb_particles = 10
-    x0 = np.random.uniform(-M, M, (nb_particles, n))
-    max_iter = 100
-    phi1, phi2 = .01, .05
+        f = rastrigin
+        nb_particles = 100000
+        x0 = np.random.uniform(-M, M, (nb_particles, n))
+        max_iter = 100
+        phi1, phi2 = .01, .05
 
-    gb, data = PSO(f, np.copy(x0), max_iter, phi1, phi2, w, project_onto_domain, record_pos=True)
-    print(data.shape)
+        gb, data = PSO(f, np.copy(x0), max_iter, phi1, phi2, w, project_onto_domain, record_pos=False)
+    else:
+        nb_particles = 10
+        low = np.array([-5, -50])
+        high = np.array([5, 50])
+        x0 = initialize_particles(nb_particles, low, high)
