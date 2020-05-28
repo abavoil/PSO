@@ -5,6 +5,7 @@ On a fixé :
 - phi2 = 0.1
 
 On suppose que l'algorithme réussi lorsque rastrigin(best_found) < 10^-3, avec gb la sortie de l'algorithme.
+On fait la moyenne sur 100 essais.
 
 
 # Pour phi1 constant
