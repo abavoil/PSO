@@ -1,0 +1,15 @@
+On a fixé :
+- 50 particules
+- 200 itérations
+- w: t --> 1-t^4
+- phi2 = 0.1
+
+# Pour phi1 constant
+
+phi1 a une importance cruciale dans l'algorithme, puisqu'il fait passer le taux de réussite de 11%
+lorsqu'il vaut 0 à ~90% lorsqu'il se trouve entre 0.08 et 0.2, puis à 2% lorsqu'il vaut 4.
+On voit donc qu'il faut prendre un phi1 du même ordre de grandeur que phi2 pour avoir un taux de réussite
+maximal, avec un pic lorsque phi1 = phi2 = 0.1.
+
+De plus, ce test est une confirmation de l'efficacité de l'algorithme puisqu'on trouve le minimum global
+sur une fonction très problèmatique dans 90% des cas.
