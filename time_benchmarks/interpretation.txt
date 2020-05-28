@@ -1,0 +1,7 @@
+Les résultats sont en millisecondes.
+
+Ils sont calculés en faisant la moyenne sur 10 exécutions de PSO pour les paramètres donnés 
+- dimension
+- nombre d'itérations
+- nombre de particules
+
